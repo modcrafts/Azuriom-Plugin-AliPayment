@@ -144,7 +144,7 @@ class AliPayMethod extends PaymentMethod
 
     public function view()
     {
-        return 'shop::admin.gateways.methods.alipay';
+        return 'shop::admin.gateways.methods.alipay-business';
     }
 
     public function rules()
