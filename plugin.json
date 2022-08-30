@@ -1,0 +1,14 @@
+{
+    "id": "alipayment",
+    "name": "AliPayment",
+    "description": "Plugin to add AliPay to the shop's payment methods.",
+    "version": "1.0.0",
+    "url": "https://azuriom.com",
+    "authors": [
+        "MODcraft"
+    ],
+    "azuriom_api": "1.0.0",
+    "providers": [
+        "\\Azuriom\\Plugin\\AliPayment\\Providers\\AliPaymentServiceProvider"
+    ]
+}
