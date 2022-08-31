@@ -131,7 +131,11 @@ class AliPayMethod extends PaymentMethod
         }
 
         $payment = Payment::findOrFail($payId);
-
+        
+        if (!$payment->isPending()) {
+            return response("success")->header('Content-type','text/plain');
+        }
+        
         if ($status !== 'TRADE_SUCCESS') {
             logger()->warning("[Shop] Invalid payment status for #{$payment->transaction_id}: {$status}");
 
@@ -144,7 +148,7 @@ class AliPayMethod extends PaymentMethod
 
     public function view()
     {
-        return 'shop::admin.gateways.methods.alipay-business';
+        return 'alipayment::admin.alipay-business';
     }
 
     public function rules()
