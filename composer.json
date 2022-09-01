@@ -1,7 +1,7 @@
 {
     "name": "azuriom/alipayment",
     "type": "azuriom-plugin",
-    "description": "Plugin for Azuriom",
+    "description": "Plugin to add AliPay to the shop's payment methods.",
     "autoload": {
         "psr-4": {
             "Azuriom\\Plugin\\AliPayment\\": "src/"
