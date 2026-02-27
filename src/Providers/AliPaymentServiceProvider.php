@@ -12,7 +12,7 @@ class AliPaymentServiceProvider extends BasePluginServiceProvider
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         // $this->registerMiddleware();
 
@@ -24,15 +24,15 @@ class AliPaymentServiceProvider extends BasePluginServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
-        if (! plugins()->isEnabled('shop')) {
+        if (!plugins()->isEnabled('shop')) {
             logger()->warning('This plugin need the shop plugin to work !');
-   
+
             return;
         }
 
-        
+
 	    $this->loadViews();
 	    payment_manager()->registerPaymentMethod('alipay-business', AliPayMethod::class);
     }

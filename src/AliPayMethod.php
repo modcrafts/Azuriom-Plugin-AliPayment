@@ -32,18 +32,18 @@ class AliPayMethod extends PaymentMethod
     {
         $payment = $this->createPayment($cart, $amount, $currency);
 
-        $type = $this->isMobile() ? "alipay_wap" : "alipay_pc"; 
+        $type = $this->isMobile() ? "alipay_wap" : "alipay_pc";
         $host = $this->gateway->data['host'];
         $param = urlencode(json_encode(array(
             "item_name" => $this->getPurchaseDescription($payment->id),
             "from" => 'Azuriom',
         )));
 
-        $sign = md5($payment->id."FishPort 付款".$type.$amount.route('shop.payments.notification', $this->id).route('shop.payments.success', $this->id).$this->gateway->data['secret']);
-        
+        $sign = md5($payment->id."NCG 付款".$type.$amount.route('shop.payments.notification', $this->id).route('shop.payments.success', $this->id).$this->gateway->data['secret']);
+
         $attributes = array(
             "out_trade_no" => $payment->id,
-            "subject" => "FishPort 付款",
+            "subject" => "NCG 付款",
             "type" => $type,
             "total_amount" => $amount,
             "notify_url" => route('shop.payments.notification', $this->id),
@@ -66,7 +66,7 @@ class AliPayMethod extends PaymentMethod
         }
         $payment->update(['status' => 'pending']);
         //return response("success");
-        
+
         return response(base64_decode($response['content']),200);
         //return redirect()->away($host.'/payPage/pay.html?'.Arr::query(["orderId"=>$response['data']['orderId']]));
     }
@@ -101,7 +101,7 @@ class AliPayMethod extends PaymentMethod
             }
         }
                 return false;
-    } 
+    }
 
     public function notification(Request $request, ?string $rawPaymentId)
     {
@@ -114,7 +114,7 @@ class AliPayMethod extends PaymentMethod
         $status = $request->input('trade_status');
         $sign = $request->input('sign');
 
-        
+
         /*if ($status === 'Expired') {
             $_sign = md5($orderId.$status.$this->gateway->data['secret']);
             if ($sign !== $_sign) {
@@ -123,7 +123,7 @@ class AliPayMethod extends PaymentMethod
             Payment::firstWhere('transaction_id',$orderId)->update(['status' => 'expired']);
             return response()->noContent();
         }*/
-        
+
         $_sign = md5($payId.$orderId.$price.$reallyPrice.$status.$this->gateway->data['secret']);
         if($sign !== $_sign){
             logger()->warning("[Shop] Invalid notification sign: {$request} ".$payId.$orderId.$price.$reallyPrice.$status.$this->gateway->data['secret']);
@@ -131,11 +131,11 @@ class AliPayMethod extends PaymentMethod
         }
 
         $payment = Payment::findOrFail($payId);
-        
+
         if (!$payment->isPending()) {
             return response("success")->header('Content-type','text/plain');
         }
-        
+
         if ($status !== 'TRADE_SUCCESS') {
             logger()->warning("[Shop] Invalid payment status for #{$payment->transaction_id}: {$status}");
 
@@ -146,12 +146,12 @@ class AliPayMethod extends PaymentMethod
         return response("success")->header('Content-type','text/plain');
     }
 
-    public function view()
+    public function view(): string
     {
         return 'alipayment::admin.alipay-business';
     }
 
-    public function rules()
+    public function rules(): array
     {
         return [
             'host' => ['required', 'string'],
@@ -159,7 +159,7 @@ class AliPayMethod extends PaymentMethod
         ];
     }
 
-    public function image()
+    public function image(): string
     {
         return asset('plugins/alipayment/img/alipay-business.svg');
     }
