@@ -34,16 +34,17 @@ class AliPayMethod extends PaymentMethod
 
         $type = $this->isMobile() ? "alipay_wap" : "alipay_pc";
         $host = $this->gateway->data['host'];
-        $param = urlencode(json_encode(array(
-            "item_name" => $this->getPurchaseDescription($payment->id),
-            "from" => 'Azuriom',
-        )));
+        // $param = urlencode(json_encode(array(
+        //     "item_name" => $this->getPurchaseDescription($payment->id),
+        //     "from" => 'Azuriom',
+        // )));
+        $subject = $this->getPurchaseDescription($payment->id);
 
-        $sign = md5($payment->id."NCG 付款".$type.$amount.route('shop.payments.notification', $this->id).route('shop.payments.success', $this->id).$this->gateway->data['secret']);
+        $sign = md5($payment->id.$subject.$type.$amount.route('shop.payments.notification', $this->id).route('shop.payments.success', $this->id).$this->gateway->data['secret']);
 
         $attributes = array(
             "out_trade_no" => $payment->id,
-            "subject" => "NCG 付款",
+            "subject" => $subject,
             "type" => $type,
             "total_amount" => $amount,
             "notify_url" => route('shop.payments.notification', $this->id),
