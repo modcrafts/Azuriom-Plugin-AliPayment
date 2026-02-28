@@ -34,26 +34,26 @@ class AliPayMethod extends PaymentMethod
 
         $type = $this->isMobile() ? "alipay_wap" : "alipay_pc";
         $host = $this->gateway->data['host'];
-        // $param = urlencode(json_encode(array(
-        //     "item_name" => $this->getPurchaseDescription($payment->id),
-        //     "from" => 'Azuriom',
-        // )));
+
         $subject = $this->getPurchaseDescription($payment->id);
 
-        $sign = md5($payment->id.$subject.$type.$amount.route('shop.payments.notification', $this->id).route('shop.payments.success', $this->id).$this->gateway->data['secret']);
+        $notify_url = route('shop.payments.notification', $this->id)
+        $return_url = route('shop.payments.success', $this->id)
+
+        $sign = md5($payment->id.$subject.$type.$amount.$notify_url.$return_url.$this->gateway->data['secret']);
 
         $attributes = array(
             "out_trade_no" => $payment->id,
             "subject" => $subject,
             "type" => $type,
             "total_amount" => $amount,
-            "notify_url" => route('shop.payments.notification', $this->id),
+            "notify_url" => $notify_url,
             "return_url" => route('shop.payments.success', $this->id),
             "sign" => $sign,
         );
 
         $response = Http::asForm()->post($host."/createOrder.php", $attributes);
-        //var_dump($response->getBody());
+
         if (! $response->successful() || $response['status'] != "success") {
             $this->logInvalid($response, 'Invalid init response'.$response);
 
@@ -65,15 +65,13 @@ class AliPayMethod extends PaymentMethod
 
             return $this->errorResponse();
         }
-        $payment->update(['status' => 'pending']);
-        //return response("success");
 
         return response(base64_decode($response['content']),200);
         //return redirect()->away($host.'/payPage/pay.html?'.Arr::query(["orderId"=>$response['data']['orderId']]));
     }
 
     private function isMobile() {
-            // 如果有HTTP_X_WAP_PROFILE则一定是移动设备
+        // 如果有HTTP_X_WAP_PROFILE则一定是移动设备
         if (isset ($_SERVER['HTTP_X_WAP_PROFILE']))
         return true;
 
@@ -96,12 +94,12 @@ class AliPayMethod extends PaymentMethod
         {
         // 如果只支持wml并且不支持html那一定是移动设备
         // 如果支持wml和html但是wml在html之前则是移动设备
-            if ((strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') !== false) && (strpos($_SERVER['HTTP_ACCEPT'], 'text/html') === false || (strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') < strpos($_SERVER['HTTP_ACCEPT'], 'text/html'))))
+        if ((strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') !== false) && (strpos($_SERVER['HTTP_ACCEPT'], 'text/html') === false || (strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') < strpos($_SERVER['HTTP_ACCEPT'], 'text/html'))))
             {
                 return true;
             }
         }
-                return false;
+        return false;
     }
 
     public function notification(Request $request, ?string $rawPaymentId)
@@ -115,16 +113,6 @@ class AliPayMethod extends PaymentMethod
         $status = $request->input('trade_status');
         $sign = $request->input('sign');
 
-
-        /*if ($status === 'Expired') {
-            $_sign = md5($orderId.$status.$this->gateway->data['secret']);
-            if ($sign !== $_sign) {
-                return response()->json('Invalid sign');
-            }
-            Payment::firstWhere('transaction_id',$orderId)->update(['status' => 'expired']);
-            return response()->noContent();
-        }*/
-
         $_sign = md5($payId.$orderId.$price.$reallyPrice.$status.$this->gateway->data['secret']);
         if($sign !== $_sign){
             logger()->warning("[Shop] Invalid notification sign: {$request} ".$payId.$orderId.$price.$reallyPrice.$status.$this->gateway->data['secret']);
@@ -132,6 +120,15 @@ class AliPayMethod extends PaymentMethod
         }
 
         $payment = Payment::findOrFail($payId);
+
+        if ($status === 'TRADE_CLOSED') {
+            if ($payment->isCompleted()) {
+                return $this->processChargeback($payment);
+            } else {
+                $payment->update(['status' => 'expired']);
+            }
+            return response("success")->header('Content-type','text/plain');
+        }
 
         if (!$payment->isPending()) {
             return response("success")->header('Content-type','text/plain');
@@ -143,8 +140,7 @@ class AliPayMethod extends PaymentMethod
             return $this->invalidPayment($payment, $orderId, 'Invalid status');
         }
         $payment->update(['transaction_id' => $orderId]);
-        $this->processPayment($payment);
-        return response("success")->header('Content-type','text/plain');
+        return $this->processPayment($payment);
     }
 
     public function view(): string
@@ -162,7 +158,7 @@ class AliPayMethod extends PaymentMethod
 
     public function image(): string
     {
-        return asset('plugins/alipayment/img/alipay-business.svg');
+        return asset('plugins/alipayment/img/alipay-business.svg').'?t='.filemtime(public_path('assets/plugins/alipayment/img/alipay-business.svg'));
     }
 
     private function logInvalid(Response $response, string $message)
