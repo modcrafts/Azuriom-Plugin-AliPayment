@@ -37,8 +37,8 @@ class AliPayMethod extends PaymentMethod
 
         $subject = $this->getPurchaseDescription($payment->id);
 
-        $notify_url = route('shop.payments.notification', $this->id)
-        $return_url = route('shop.payments.success', $this->id)
+        $notify_url = route('shop.payments.notification', $this->id);
+        $return_url = route('shop.payments.success', $this->id);
 
         $sign = md5($payment->id.$subject.$type.$amount.$notify_url.$return_url.$this->gateway->data['secret']);
 
