@@ -123,7 +123,7 @@ class AliPayMethod extends PaymentMethod
 
         if ($status === 'TRADE_CLOSED') {
             if ($payment->isCompleted()) {
-                return $this->processChargeback($payment);
+                return $this->processRefund($payment);
             } else {
                 $payment->update(['status' => 'expired']);
             }
